@@ -1,62 +1,32 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interface/ITransferProxy.sol";
 
-contract TransferProxy is AccessControl, ITransferProxy {
-    event operatorChanged(address indexed from, address indexed to);
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
+contract TransferProxy is ITransferProxy, Ownable {
+    using SafeERC20 for IERC20;
 
-    address public owner;
+    event OperatorChanged(address indexed from, address indexed to);
+
     address public operator;
-    // Create a new role identifier for the minter role
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    // Create a new role identifier for the minter role
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
-    constructor() {
-        owner = msg.sender;
-        _setupRole(ADMIN_ROLE, msg.sender);
-        _setupRole(OPERATOR_ROLE, operator);
-    }
-
-    function changeOperator(address _operator)
-        external
-        onlyRole(ADMIN_ROLE)
-        returns (bool)
-    {
-        require(
-            _operator != address(0),
-            "Operator: new operator is the zero address"
-        );
-        _revokeRole(ADMIN_ROLE, operator);
+    constructor(address _operator) Ownable(_operator) {
         operator = _operator;
-        _setupRole(OPERATOR_ROLE, operator);
-        emit operatorChanged(address(0), operator);
-        return true;
     }
 
-    /** change the Ownership from current owner to newOwner address
-        @param newOwner : newOwner address */
+    modifier onlyOperator() {
+        require(msg.sender == operator, "Only operator can call this function");
+        _;
+    }
 
-    function transferOwnership(address newOwner)
-        external
-        onlyRole(ADMIN_ROLE)
-        returns (bool)
-    {
-        require(
-            newOwner != address(0),
-            "Ownable: new owner is the zero address"
-        );
-        _revokeRole(ADMIN_ROLE, owner);
-        emit OwnershipTransferred(owner, newOwner);
-        owner = newOwner;
-        _setupRole(ADMIN_ROLE, newOwner);
-        return true;
+    function changeOperator(address _operator) external onlyOwner {
+        require(_operator != address(0), "Operator: new operator is the zero address");
+        operator = _operator;
+        emit OperatorChanged(operator, _operator);
     }
 
     function erc721safeTransferFrom(
@@ -64,30 +34,16 @@ contract TransferProxy is AccessControl, ITransferProxy {
         address from,
         address to,
         uint256 tokenId
-    ) external onlyRole(OPERATOR_ROLE) {
+    ) external  onlyOperator {
         token.safeTransferFrom(from, to, tokenId);
     }
 
-    function erc1155safeTransferFrom(
-        IERC1155 token,
-        address from,
-        address to,
-        uint256 tokenId,
-        uint256 value,
-        bytes calldata data
-    ) external onlyRole(OPERATOR_ROLE) {
-        token.safeTransferFrom(from, to, tokenId, value, data);
-    }
-
-    function erc20safeTransferFrom(
+    function erc20SafeTransferFrom(
         IERC20 token,
         address from,
         address to,
         uint256 value
-    ) external onlyRole(OPERATOR_ROLE) {
-        require(
-            token.transferFrom(from, to, value),
-            "failure while transferring"
-        );
+    ) external  onlyOperator {
+        token.safeTransferFrom(from, to, value);
     }
 }
