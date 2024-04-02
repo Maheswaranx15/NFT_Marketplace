@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.21;
+pragma solidity 0.8.23;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -14,8 +14,8 @@ contract TransferProxy is ITransferProxy, Ownable {
 
     address public operator;
 
-    constructor(address _operator) Ownable(_operator) {
-        operator = _operator;
+    constructor() Ownable(msg.sender) {
+        operator = msg.sender;
     }
 
     modifier onlyOperator() {
