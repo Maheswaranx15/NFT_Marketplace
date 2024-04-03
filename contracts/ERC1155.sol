@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.21;
+pragma solidity 0.8.23;
 
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
+import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Pausable.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./common/ERC2981.sol";
@@ -14,11 +14,10 @@ contract CyberpunksNFT1155 is
     ERC1155Burnable,
     ERC1155Supply,
     ERC2981,
-    AccessControl
+    AccessControl,
+    ERC1155Pausable
 {
-    using Counters for Counters.Counter;
     using Strings for uint256;
-    Counters.Counter private _tokenIdTracker;
     mapping(uint256 => string) private _tokenURIs;
     mapping(uint256 => bool) private usedNonce;
 
@@ -52,10 +51,9 @@ contract CyberpunksNFT1155 is
     ) ERC1155(_baseTokenURI) {
         baseTokenURI = _baseTokenURI;
         owner = _msgSender();
-        _setupRole(ADMIN_ROLE, msg.sender);
+        grantRole(ADMIN_ROLE, msg.sender);
         _name = _tokenName;
         _symbol = _tokenSymbol;
-        _tokenIdTracker.increment();
     }
 
     function name() external view returns (string memory) {
@@ -81,10 +79,16 @@ contract CyberpunksNFT1155 is
         _revokeRole(ADMIN_ROLE, owner);
         emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
-        _setupRole(ADMIN_ROLE, newOwner);
+        grantRole(ADMIN_ROLE, newOwner);
         return true;
     }
 
+    function _update(address from, address to, uint256[] memory ids, uint256[] memory values)
+        internal
+        override(ERC1155, ERC1155Pausable, ERC1155Supply)
+    {
+        super._update(from, to, ids, values);
+    }
     function setBaseURI(string memory uri_) external onlyRole(ADMIN_ROLE) returns (bool) {
         emit BaseURIChanged(baseTokenURI, uri_);
         baseTokenURI = uri_;
@@ -102,11 +106,10 @@ contract CyberpunksNFT1155 is
         require(!usedNonce[sign.nonce], "Nonce : Invalid Nonce");
         usedNonce[sign.nonce] = true;
         verifySign(_tokenURI, msg.sender, sign);
-        _tokenId = _tokenIdTracker.current();
+        _tokenId = totalSupply();
         _mint(_msgSender(), _tokenId, supply, "");
         _tokenURIs[_tokenId] = _tokenURI;
         _setTokenRoyalty(_tokenId, _msgSender(), _royaltyFee);
-        _tokenIdTracker.increment();
         return _tokenId;
     }
 
@@ -173,16 +176,5 @@ contract CyberpunksNFT1155 is
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
-    }
-
-    function _beforeTokenTransfer(
-        address _operator,
-        address from,
-        address to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
-    ) internal virtual override(ERC1155Supply, ERC1155) {
-        super._beforeTokenTransfer(_operator, from, to, ids, amounts, data);
     }
 }

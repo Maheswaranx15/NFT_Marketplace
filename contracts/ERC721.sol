@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.21;
+pragma solidity 0.8.23;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "./ERC2981.sol";
+import "./common/ERC2981.sol";
 
 contract NFT is
     ERC721Enumerable,
@@ -17,8 +16,7 @@ contract NFT is
     ERC2981,
     Ownable
 {
-    using Counters for Counters.Counter;
-    Counters.Counter private _tokenIdTracker;
+
     string private baseTokenURI;
     address public _owner;
     mapping(uint256 => bool) private usedNonce;
@@ -40,7 +38,6 @@ contract NFT is
         baseTokenURI = _baseTokenURI;
         _owner = _msgSender();
         operator = _operator;
-        _tokenIdTracker.increment();
     }
 
     function baseURI() external view returns (string memory) {
@@ -61,11 +58,10 @@ contract NFT is
         require(!usedNonce[sign.nonce], "Nonce : Invalid Nonce");
         usedNonce[sign.nonce] = true;
         verifySign(_tokenURI, msg.sender, sign);
-        _tokenId = _tokenIdTracker.current();
+        _tokenId = totalSupply();
         _mint(_msgSender(), _tokenId);
         _setTokenURI(_tokenId, _tokenURI);
         _setTokenRoyalty(_tokenId, _msgSender(), _royaltyFee);
-        _tokenIdTracker.increment();
         return _tokenId;
     }
 
