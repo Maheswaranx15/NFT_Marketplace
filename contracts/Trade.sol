@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.21;
+pragma solidity 0.8.23;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
@@ -98,7 +98,7 @@ contract Trade is AccessControl {
         sellerFeePermille = _sellerFee;
         transferProxy = _transferProxy;
         owner = msg.sender;
-        _setupRole(ADMIN_ROLE, msg.sender);
+        grantRole(ADMIN_ROLE, msg.sender);
     }
 
     /**
@@ -162,7 +162,7 @@ contract Trade is AccessControl {
         _revokeRole(ADMIN_ROLE, owner);
         emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
-        _setupRole(ADMIN_ROLE, newOwner);
+        grantRole(ADMIN_ROLE, newOwner);
         return true;
     }
 

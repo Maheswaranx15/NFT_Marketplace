@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.21;
+pragma solidity 0.8.23;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./common/ERC2981.sol";
 
@@ -17,8 +16,6 @@ contract CyberpunksNFTUser721Token is
     ERC2981,
     AccessControl
 {
-    using Counters for Counters.Counter;
-    Counters.Counter private _tokenIdTracker;
     string private baseTokenURI;
     address public owner;
 
@@ -46,8 +43,7 @@ contract CyberpunksNFTUser721Token is
     ) ERC721(name, symbol) {
         baseTokenURI = _baseTokenURI;
         owner = _msgSender();
-        _setupRole(ADMIN_ROLE, msg.sender);
-        _tokenIdTracker.increment();
+        grantRole(ADMIN_ROLE, msg.sender);
     }
 
 
@@ -62,7 +58,7 @@ contract CyberpunksNFTUser721Token is
         );
         _revokeRole(ADMIN_ROLE, owner);
         owner = newOwner;
-        _setupRole(ADMIN_ROLE, newOwner);
+        grantRole(ADMIN_ROLE, newOwner);
         emit OwnershipTransferred(owner, newOwner);
         return true;
     }
@@ -81,20 +77,11 @@ contract CyberpunksNFTUser721Token is
     ) external virtual returns (uint256 _tokenId) {
         // We cannot just use balanceOf to create the new tokenId because tokens
         // can be burned (destroyed), so we need a separate counter.
-        _tokenId = _tokenIdTracker.current();
+        _tokenId = totalSupply();
         _mint(_msgSender(), _tokenId);
         _setTokenURI(_tokenId, _tokenURI);
         _setTokenRoyalty(_tokenId, _msgSender(), _royaltyFee);
-        _tokenIdTracker.increment();
         return _tokenId;
-    }
-
-    function _burn(uint256 tokenId)
-        internal
-        override(ERC721, ERC721URIStorage)
-    {
-        _resetTokenRoyalty(tokenId);
-        super._burn(tokenId);
     }
 
     function tokenURI(uint256 tokenId)
@@ -110,24 +97,30 @@ contract CyberpunksNFTUser721Token is
         return baseTokenURI;
     }
 
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal virtual override(ERC721, ERC721Enumerable) {
-        super._beforeTokenTransfer(from, to, tokenId);
+    function _increaseBalance(address account, uint128 value)
+        internal
+        override(ERC721, ERC721Enumerable)
+    {
+        super._increaseBalance(account, value);
+    }
+
+    function _update(address to, uint256 tokenId, address auth)
+        internal
+        override(ERC721, ERC721Enumerable)
+        returns (address)
+    {
+        return super._update(to, tokenId, auth);
     }
 
     /**
      * @dev See {IERC165-supportsInterface}.
      */
     function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override(ERC721, ERC721Enumerable, ERC2981, AccessControl)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
+            public
+            view
+            override(ERC721, ERC721Enumerable, ERC721URIStorage,ERC2981,AccessControl)
+            returns (bool)
+        {
+            return super.supportsInterface(interfaceId);
     }
 }

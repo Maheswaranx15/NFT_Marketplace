@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.21;
+pragma solidity 0.8.23;
 
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
+import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Pausable.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./common/ERC2981.sol";
@@ -15,11 +15,10 @@ contract CyberpunksNFTUser1155Token is
     ERC1155Burnable,
     ERC1155Supply,
     ERC2981,
-    AccessControl
+    AccessControl,
+    ERC1155Pausable
 {
-    using Counters for Counters.Counter;
     using Strings for uint256;
-    Counters.Counter private _tokenIdTracker;
     mapping(uint256 => string) private _tokenURIs;
 
     // Create a new role identifier for the minter role
@@ -52,10 +51,9 @@ contract CyberpunksNFTUser1155Token is
     ) ERC1155(_baseTokenURI) {
         baseTokenURI = _baseTokenURI;
         owner = _msgSender();
-        _setupRole(ADMIN_ROLE, msg.sender);
+        grantRole(ADMIN_ROLE, msg.sender);
         _name = _tokenName;
         _symbol = _tokenSymbol;
-        _tokenIdTracker.increment();
     }
 
     function name() external view returns (string memory) {
@@ -80,7 +78,7 @@ contract CyberpunksNFTUser1155Token is
         );
         _revokeRole(ADMIN_ROLE, owner);
         owner = newOwner;
-        _setupRole(ADMIN_ROLE, newOwner);
+        grantRole(ADMIN_ROLE, newOwner);
         emit OwnershipTransferred(owner, newOwner);
         return true;
     }
@@ -91,6 +89,13 @@ contract CyberpunksNFTUser1155Token is
         return true;
     }
 
+    function _update(address from, address to, uint256[] memory ids, uint256[] memory values)
+        internal
+        override(ERC1155, ERC1155Pausable, ERC1155Supply)
+    {
+        super._update(from, to, ids, values);
+    }
+
     function mint(
         string memory _tokenURI,
         uint96 _royaltyFee,
@@ -98,11 +103,10 @@ contract CyberpunksNFTUser1155Token is
     ) external virtual returns (uint256 _tokenId) {
         // We cannot just use balanceOf to create the new tokenId because tokens
         // can be burned (destroyed), so we need a separate counter.
-        _tokenId = _tokenIdTracker.current();
+        _tokenId = totalSupply();
         _mint(_msgSender(), _tokenId, supply, "");
         _tokenURIs[_tokenId] = _tokenURI;
         _setTokenRoyalty(_tokenId, _msgSender(), _royaltyFee);
-        _tokenIdTracker.increment();
         return _tokenId;
     }
 
@@ -146,14 +150,4 @@ contract CyberpunksNFTUser1155Token is
         return super.supportsInterface(interfaceId);
     }
 
-    function _beforeTokenTransfer(
-        address _operator,
-        address from,
-        address to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
-    ) internal virtual override(ERC1155Supply, ERC1155) {
-        super._beforeTokenTransfer(_operator, from, to, ids, amounts, data);
-    }
 }
