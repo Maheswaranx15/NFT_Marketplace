@@ -13,7 +13,7 @@ async function main() {
   const NFT721symbol = "NFT721";
   const NFT1155name = "ERC1155";
   const NFT1155symbol = "NFT1155";
-  const tokenURIPrefix = "https://gateway.pinata.cloud/ipfs/ "
+  const tokenURIPrefix = "https://gateway.pinata.cloud/ipfs/"
   const buyerFee = 25;
   const sellerFee = 25;
   const ERC721 = await hre.ethers.getContractFactory("ERC721");

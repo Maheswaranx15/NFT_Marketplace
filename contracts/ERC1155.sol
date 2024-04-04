@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./common/ERC2981.sol";
 
-contract CyberpunksNFT1155 is
+contract NFT1155 is
     Context,
     ERC1155Burnable,
     ERC1155Supply,

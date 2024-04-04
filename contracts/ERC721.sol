@@ -20,7 +20,6 @@ contract NFT is
     string private baseTokenURI;
     address public _owner;
     mapping(uint256 => bool) private usedNonce;
-    address public operator;
 
     struct Sign {
         uint8 v;
@@ -32,12 +31,10 @@ contract NFT is
     constructor(
         string memory name,
         string memory symbol,
-        string memory _baseTokenURI,
-        address _operator
+        string memory _baseTokenURI
     ) ERC721(name, symbol)Ownable(msg.sender) {
         baseTokenURI = _baseTokenURI;
         _owner = _msgSender();
-        operator = _operator;
     }
 
     function baseURI() external view returns (string memory) {
