@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Pausable.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./common/ERC2981.sol";
 
 contract NFT1155 is
@@ -14,16 +14,12 @@ contract NFT1155 is
     ERC1155Burnable,
     ERC1155Supply,
     ERC2981,
-    AccessControl,
-    ERC1155Pausable
+    ERC1155Pausable,
+    Ownable
 {
     using Strings for uint256;
     mapping(uint256 => string) private _tokenURIs;
     mapping(uint256 => bool) private usedNonce;
-
-    // Create a new role identifier for the minter role
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-
 
     struct Sign {
         uint8 v;
@@ -35,23 +31,14 @@ contract NFT1155 is
     string private baseTokenURI;
     string private _name;
     string private _symbol;
-    address public owner;
-
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
-    event RoyaltyUpdated(address indexed receiver, uint96 indexed fee);
     event BaseURIChanged(string indexed uri, string indexed newuri);
 
     constructor(
         string memory _tokenName,
         string memory _tokenSymbol,
         string memory _baseTokenURI
-    ) ERC1155(_baseTokenURI) {
+    ) ERC1155(_baseTokenURI)Ownable(msg.sender) {
         baseTokenURI = _baseTokenURI;
-        owner = _msgSender();
-        grantRole(ADMIN_ROLE, msg.sender);
         _name = _tokenName;
         _symbol = _tokenSymbol;
     }
@@ -64,32 +51,13 @@ contract NFT1155 is
         return _symbol;
     }
 
-    /** @dev change the Ownership from current owner to newOwner address
-        @param newOwner : newOwner address */
-
-    function transferOwnership(address newOwner)
-        external
-        onlyRole(ADMIN_ROLE)
-        returns (bool)
-    {
-        require(
-            newOwner != address(0),
-            "Ownable: new owner is the zero address"
-        );
-        _revokeRole(ADMIN_ROLE, owner);
-        emit OwnershipTransferred(owner, newOwner);
-        owner = newOwner;
-        grantRole(ADMIN_ROLE, newOwner);
-        return true;
-    }
-
     function _update(address from, address to, uint256[] memory ids, uint256[] memory values)
         internal
         override(ERC1155, ERC1155Pausable, ERC1155Supply)
     {
         super._update(from, to, ids, values);
     }
-    function setBaseURI(string memory uri_) external onlyRole(ADMIN_ROLE) returns (bool) {
+    function setBaseURI(string memory uri_) external onlyOwner returns (bool) {
         emit BaseURIChanged(baseTokenURI, uri_);
         baseTokenURI = uri_;
         return true;
@@ -149,7 +117,7 @@ contract NFT1155 is
             abi.encodePacked(this, caller, _tokenURI, sign.nonce)
         );
         require(
-            owner ==
+            owner() ==
                 ecrecover(
                     keccak256(
                         abi.encodePacked(
@@ -172,7 +140,7 @@ contract NFT1155 is
         public
         view
         virtual
-        override(ERC2981, ERC1155, AccessControl)
+        override(ERC2981, ERC1155)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);

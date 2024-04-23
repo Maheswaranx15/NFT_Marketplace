@@ -50,22 +50,22 @@ describe("NFT Marketplace", function () {
       const NFT721 = await ethers.getContractFactory("NFT");
       nft721instace = await NFT721.deploy(nft721tokenName,nft721tokenSymbol,tokenURIPrefix);
       await nft721instace.deployed();
-      // const NFT1155 = await ethers.getContractFactory("NFT1155");
-      // nft1155instance = await NFT1155.deploy(nft1155tokenName,nft1155tokenSymbol,tokenURIPrefix);
-      // await nft1155instance.deployed();
-      // const Trade = await ethers.getContractFactory("Trade");
-      // tradeinstance = await Trade.deploy(buyerFee,sellerFee,proxyinstance.address);
-      // await tradeinstance.deployed();
-      // await proxyinstance.changeOperator(tradeinstance.address)
-      // const Token = await ethers.getContractFactory("Sample");
-      // tokenInstance = await Token.deploy();
-      // await tokenInstance.deployed();
+      const NFT1155 = await ethers.getContractFactory("NFT1155");
+      nft1155instance = await NFT1155.deploy(nft1155tokenName,nft1155tokenSymbol,tokenURIPrefix);
+      await nft1155instance.deployed();
+      const Trade = await ethers.getContractFactory("Trade");
+      tradeinstance = await Trade.deploy(buyerFee,sellerFee,proxyinstance.address);
+      await tradeinstance.deployed();
+      await proxyinstance.changeOperator(tradeinstance.address)
+      const Token = await ethers.getContractFactory("Sample");
+      tokenInstance = await Token.deploy();
+      await tokenInstance.deployed();
 
-      // console.log("tokenInstance",tokenInstance.address)
-      // console.log("proxyinstance",proxyinstance.address)
-      // console.log("nft721instace",nft721instace.address)
-      // console.log("nft1155instance",nft1155instance.address)
-      // console.log("tradeinstance",tradeinstance.address)
+      console.log("tokenInstance",tokenInstance.address)
+      console.log("proxyinstance",proxyinstance.address)
+      console.log("nft721instace",nft721instace.address)
+      console.log("nft1155instance",nft1155instance.address)
+      console.log("tradeinstance",tradeinstance.address)
 
     });
 
