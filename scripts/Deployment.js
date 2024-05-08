@@ -110,7 +110,7 @@ async function main() {
 
   // VERIFY
   //proxy
-   await hre.run("verify:verify", {
+  await hre.run("verify:verify", {
     address: proxyAddress,
   });
 

@@ -58,7 +58,7 @@ describe("NFT Marketplace", function () {
       tradeinstance = await Trade.deploy(buyerFee,sellerFee,proxyinstance.address);
       await tradeinstance.deployed();
       await proxyinstance.changeOperator(tradeinstance.address)
-      const Token = await ethers.getContractFactory("Sample");
+      const Token = await ethers.getContractFactory("mockToken");
       tokenInstance = await Token.deploy(owner.address,"test","TET");
       await tokenInstance.deployed();
 
